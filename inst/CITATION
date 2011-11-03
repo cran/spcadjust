@@ -1,0 +1,8 @@
+citHeater("To cite package 'spcadjust' in publications use:")
+citEntry(entry="unpublished", 
+         title="Guaranteed Conditional Performance of Control Charts via Bootstrap Methods",
+	 author=personList(as.person("Axel Gandy"), as.person("Jan Terje Kvaloy")),
+         year=2011,
+         note="arXiv:1111.4180",
+	 textVersion=paste("Axel Gandy and Jan Terje Kvaloy (",year,") Guaranteed Conditional Performance of Control Charts via Bootstrap Methods, arXiv:1111.4180.")
+	)

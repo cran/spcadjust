@@ -1,0 +1,7 @@
+export(SPCproperty,SPC2sidedconfint)
+exportClasses(SPCchart)
+exportClasses(SPCCUSUM,SPCCUSUMNormal,SPCCUSUMNonpar,SPCCUSUMNonparCenterScale,SPCCUSUMlm,SPCCUSUMlogreg,calARLCUSUM,calhitprobCUSUM,ARLCUSUM,hitprobCUSUM)
+exportClasses(SPCproperty,SPCARL,SPChitprob,SPCcalARL,SPCcalhitprob)
+exportClasses(SPCShew,SPCShewNormalCenterScale,SPCShewNonparCenterScale,ARLShew,calARLShew,hitprobShew,calhitprobShew)
+exportMethods(xiofdata,Pofdata,xiofP,resample,updates,getcdfupdates,runchart,SPCq,qtrafo,SPCoutput)
+
