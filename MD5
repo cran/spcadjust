@@ -1,12 +1,12 @@
-3d9854b6687b3198922124ff21af8b1d *DESCRIPTION
+cc64583cbc14a49e390dc7fc648c4af5 *DESCRIPTION
 9443e1f1b7e7c471376587cd56d4f885 *NAMESPACE
 269dd5f0887d06b8030a7d1c4787712a *R/CUSUMlib.R
 8d5bd1fb6bf46aabd1835017870b3f87 *R/main.R
-f48974c1d2f31947668209cb64d06ff9 *inst/CITATION
-dbf85a9bc263f1460ab35bbc0ee2d771 *inst/doc/Methods.pdf
+8b9f5e38d4662800647cf393f6bfbca7 *inst/CITATION
+6d0ff3784b5a667a5a85b3de7df05bc0 *inst/doc/Methods.pdf
 4c72d23fe1a9d79d58d16a7d923c112a *inst/doc/papers.bib
 f46e909243b3e594528cd2064f57d3a0 *inst/doc/spcadjust-intro.Rnw
-2329b792d5e7d18ed156a1b167ea9fa3 *inst/doc/spcadjust-intro.pdf
+4edb9cedb8ada12800744405435ca7ec *inst/doc/spcadjust-intro.pdf
 9d09de76422ee8607ccb4801d1f04ae5 *inst/doc/spcadjustClasses.pdf
 1b03e2d1565277ef5ecea78f51afc69a *man/ARLCUSUM-class.Rd
 7f595ccc6d540cc1dcf981e6c347984c *man/ARLShew-class.Rd
