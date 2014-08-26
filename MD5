@@ -1,13 +1,11 @@
-cc64583cbc14a49e390dc7fc648c4af5 *DESCRIPTION
-9443e1f1b7e7c471376587cd56d4f885 *NAMESPACE
+3a35dacff99fa677481602b04a5f6878 *DESCRIPTION
+84fa7f6fe9d5c6f4d3e2d043f3fb8431 *NAMESPACE
 269dd5f0887d06b8030a7d1c4787712a *R/CUSUMlib.R
 8d5bd1fb6bf46aabd1835017870b3f87 *R/main.R
-8b9f5e38d4662800647cf393f6bfbca7 *inst/CITATION
-6d0ff3784b5a667a5a85b3de7df05bc0 *inst/doc/Methods.pdf
-4c72d23fe1a9d79d58d16a7d923c112a *inst/doc/papers.bib
+daa1a4a5f32ebed5a9c866d372e54754 *inst/CITATION
+4903bb5d44cfa32dcccb42d32ebca6b2 *inst/doc/spcadjust-intro.R
 f46e909243b3e594528cd2064f57d3a0 *inst/doc/spcadjust-intro.Rnw
-4edb9cedb8ada12800744405435ca7ec *inst/doc/spcadjust-intro.pdf
-9d09de76422ee8607ccb4801d1f04ae5 *inst/doc/spcadjustClasses.pdf
+bea43b2daa64ce9e679be851fb9e2881 *inst/doc/spcadjust-intro.pdf
 1b03e2d1565277ef5ecea78f51afc69a *man/ARLCUSUM-class.Rd
 7f595ccc6d540cc1dcf981e6c347984c *man/ARLShew-class.Rd
 2454fec3805c88c7c2aa7eb9d26d35d7 *man/Pofdata-methods.Rd
@@ -43,3 +41,7 @@ f9fea6b19706bc6b92e06728686eadb1 *man/runchart-methods.Rd
 ded802757409cd2bff75458bab2fadd3 *man/updates-methods.Rd
 f91647e689a70734547ecb804ff01666 *man/xiofP-methods.Rd
 6d0ac36050140bb9ec57236bbca42e0a *man/xiofdata-methods.Rd
+b46e9d2e78e44a97b7f2c7f0781bad64 *vignettes/Methods.pdf
+28410b6794ac925f068c56b51942ba9b *vignettes/papers.bib
+f46e909243b3e594528cd2064f57d3a0 *vignettes/spcadjust-intro.Rnw
+9d09de76422ee8607ccb4801d1f04ae5 *vignettes/spcadjustClasses.pdf

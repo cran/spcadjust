@@ -1,3 +1,5 @@
+import("methods")
+
 export(SPCproperty,SPC2sidedconfint)
 exportClasses(SPCchart)
 exportClasses(SPCCUSUM,SPCCUSUMNormal,SPCCUSUMNonpar,SPCCUSUMNonparCenterScale,SPCCUSUMlm,SPCCUSUMlogreg,calARLCUSUM,calhitprobCUSUM,ARLCUSUM,hitprobCUSUM)
