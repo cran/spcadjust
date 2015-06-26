@@ -194,7 +194,9 @@ setMethod("SPCq", signature="hitprobCUSUM",
 ######
 ############ #definitions for Shewhart charts....
 
-setClass("SPCShew",contains="SPCchart",representation="VIRTUAL")
+setClass("SPCShew",contains=c("SPCchart","VIRTUAL"),
+         slots=list(twosided="logical"),
+         prototype=list(twosided=FALSE))
 setMethod("runchart", signature="SPCShew", function(chart,newdata,xi){
     updates(chart,xi=xi, data=newdata)
 })
@@ -213,7 +215,10 @@ setMethod("getcdfupdates", signature="SPCShewNormalCenterScale",
           function(chart, P, xi) {
               muupd <- (P$mu-xi$mu)/xi$sd
               sdsqupd <- P$sd/xi$sd
-              function(x) pnorm(x, mean=muupd, sd=sdsqupd)
+              if (chart@twosided)
+                  function(x) pmax(0,pnorm(x, mean=muupd, sd=sdsqupd)-pnorm(-x, mean=muupd, sd=sdsqupd))
+              else
+                  function(x) pnorm(x, mean=muupd, sd=sdsqupd)
           })
 setMethod("updates",signature="SPCShewNormalCenterScale",
           function(chart,xi,data) (data-xi$mu)/xi$sd
@@ -235,7 +240,13 @@ setMethod("resample", signature="SPCShewNonparCenterScale",
                   P[sample.int(dim(P)[1],replace=TRUE),]
           })
 setMethod("getcdfupdates", signature="SPCShewNonparCenterScale",
-          function(chart, P, xi) ecdf(updates(chart, xi=xi,data=P)))
+          function(chart, P, xi){
+              if (chart@twosided)
+                  ecdf(abs(updates(chart, xi=xi,data=P)))
+              else
+                  ecdf(updates(chart, xi=xi,data=P))
+          }
+          )
 setMethod("updates",signature="SPCShewNonparCenterScale",
           function(chart,xi,data) (data-xi$mu)/xi$sd)
 

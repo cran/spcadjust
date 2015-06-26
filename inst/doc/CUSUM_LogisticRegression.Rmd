@@ -1,0 +1,117 @@
+<!--
+%\VignetteEngine{knitr::knitr}
+%\VignetteIndexEntry{CUSUM Chart based on Logistic Regression Models with Estimated Parameters}
+-->
+CUSUM Chart with estimated In-Control State
+===========================================
+Using Nonparametric bootstrap
+---------------------------
+In this example we consider an application to a CUSUM charts based
+on a logistic regression model.
+
+Assume we have $n$ past in-control  data $(Y_{-n},X_{-n}),\ldots,(Y_{-1},X_{-1})$,
+where $Y_i$ is a binary response variable and $X_i$ is a corresponding vector
+of covariates. 
+
+Suppose that in control
+$\mbox{logit}(\mbox{P}(Y_i=1|X_i))=X_i\beta$. A maximum likelihood estimate  $\hat\beta$ of the
+parameters is obtained by  the glm function.
+
+For detecting a change to
+$\mbox{logit}(\mbox{P}(Y_i=1|X_i))=\Delta+X_i\beta$,
+a CUSUM chart based on the cumulative sum of likelihood ratios of the
+in-control versus out-of-control model can be defined by (\citep{Steiner2000Msp})
+$$S_t=\max(0, S_{t-1}+R_t), \quad S_0=0, $$
+where
+$$
+\exp(R_t)=\frac{\exp(\Delta+X_t\beta)^{Y_t}/(1+\exp(\Delta+X_t\beta))}{\exp(X_t\beta)^{Y_t}/(1+\exp(X_t\beta))}
+=\exp(Y_t\Delta)\frac{1+\exp(X_t\beta)}{1+\exp(\Delta+X_t\beta)}.
+$$
+
+
+
+```{r,echo=FALSE}
+set.seed(22381950)
+```
+
+The following generates a data set of past observations (replace this
+with your observed past data) from the model
+$\mbox{logit}(\mbox{P}(Y_i=1|X_i))=-1+x_1+x_2+x_3$
+ and distribution of the covariate values as specified below. 
+```{r}
+n <- 1000
+Xlogreg <- data.frame(x1=rbinom(n,1,0.4), x2=runif(n,0,1), x3=rnorm(n))
+xbeta <- -1+Xlogreg$x1+Xlogreg$x2+Xlogreg$x3
+Xlogreg$y <- rbinom(n,1,exp(xbeta)/(1+exp(xbeta)))
+```
+
+Next, we initialise and compute the resulting estimate for running the chart - in this case $\hat \beta$. 
+```{r}
+library(spcadjust)
+chartlogreg <- new("SPCCUSUMlogreg",Delta= 1, formula="y~x1+x2+x3")
+xihat <- xiofdata(chartlogreg,Xlogreg)
+xihat
+```
+
+Calibrating the Chart to a Given Average Run Length (ARL)
+---------------------------------------------------
+
+Next find the threshold that with roughly 90\%
+probability  results in an average run length of at least 1000 in control. 
+You should increase the number of bootstrap replications (the argument nrep) for real applications.
+
+```{r}
+cal <- SPCproperty(data=Xlogreg,
+            nrep=100,
+            property=new("calARLCUSUM",chart=chartlogreg,target=1000))
+cal
+```
+
+```{r,echo=FALSE}
+set.seed(2238195)
+```
+
+Run the chart
+---------------------------------------------------
+
+Next, we run  the chart with new observations (that are in-control).
+```{r}
+n <- 100
+newXlogreg <- data.frame(x1=rbinom(n,1,0.4), x2=runif(n,0,1), x3=rnorm(n))
+newxbeta <- -1+newXlogreg$x1+newXlogreg$x2+newXlogreg$x3
+newXlogreg$y <- rbinom(n,1,exp(newxbeta)/(1+exp(newxbeta)))
+S <- runchart(chartlogreg, newdata=newXlogreg,xi=xihat)
+```
+
+
+```{r,fig=TRUE,fig.width=10,fig.height=4,echo=FALSE}
+par(mfrow=c(1,1),mar=c(4,5,0,0))
+plot(S,ylab=expression(S[t]),xlab="t",type="b",ylim=range(S,cal@res+1,cal@raw))
+lines(c(0,100),rep(cal@res,2),col="red")
+lines(c(0,100),rep(cal@raw,2),col="blue")
+legend("topleft",c("Adjusted Threshold","Unadjusted Threshold"),col=c("red","blue"),lty=1)
+```
+
+In the next example, the  chart is run with data that is
+out-of-control from time 51 and onwards.
+```{r}
+n <- 100
+newXlogreg <- data.frame(x1=rbinom(n,1,0.4), x2=runif(n,0,1), x3=rnorm(n))
+outind <- c(rep(0,50),rep(1,50))
+newxbeta <- -1+newXlogreg$x1+newXlogreg$x2+newXlogreg$x3+outind
+newXlogreg$y <- rbinom(n,1,exp(newxbeta)/(1+exp(newxbeta)))
+S <- runchart(chartlogreg, newdata=newXlogreg,xi=xihat)
+```
+
+```{r,fig=TRUE,fig.width=10,fig.height=4,echo=FALSE}
+par(mfrow=c(1,1),mar=c(4,5,0,0))
+plot(S,ylab=expression(S[t]),xlab="t",type="b",ylim=range(S,cal@res+1,cal@raw))
+lines(c(0,100),rep(cal@res,2),col="red")
+lines(c(0,100),rep(cal@raw,2),col="blue")
+legend("topleft",c("Adjusted Threshold","Unadjusted Threshold"),col=c("red","blue"),lty=1)
+```
+
+
+
+
+

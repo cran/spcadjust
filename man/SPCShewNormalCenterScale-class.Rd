@@ -36,15 +36,36 @@ Axel Gandy
 \code{\linkS4class{calhitprobShew}}.
 }
 \examples{
-chartShew <- new("SPCShewNormalCenterScale")
 X<-rnorm(100);
+
+##calibrate to ARL 100
+chartShew <- new("SPCShewNormalCenterScale",twosided=TRUE)
 SPCproperty(data=X,nrep=500,
             property=new("calARLShew",chart=chartShew,target=100),covprob=c(0.7,0.9))
+
+chartShewOneSided <- new("SPCShewNormalCenterScale",twosided=FALSE)
+SPCproperty(data=X,nrep=500,
+            property=new("calARLShew",chart=chartShewOneSided,target=100),covprob=c(0.7,0.9))
+
+
+##calibrate to a hitting probability of 0.01 in 100 steps
+SPCproperty(data=X,nrep=500,
+            property=new("calhitprobShew",chart=chartShew,target=0.01,nsteps=100))
+SPCproperty(data=X,nrep=500,
+            property=new("calhitprobShew",chart=chartShewOneSided,target=0.01,nsteps=100))
+
+## work out  for ARL for a fixed threshold of 4
 SPCproperty(data=X,nrep=500,
             property=new("ARLShew",chart=chartShew,threshold=4))
 SPCproperty(data=X,nrep=500,
-            property=new("hitprobShew",chart=chartShew,nsteps=100,threshold=4))
+            property=new("ARLShew",chart=chartShewOneSided,threshold=4))
+
+
 SPCproperty(data=X,nrep=500,
-            property=new("calhitprobShew",chart=chartShew,target=0.01,nsteps=100))
+            property=new("hitprobShew",chart=chartShew,nsteps=100,threshold=4))
+
+SPCproperty(data=X,nrep=500,
+            property=new("hitprobShew",chart=chartShewOneSided,nsteps=100,threshold=4))
+
 }
 \keyword{classes}

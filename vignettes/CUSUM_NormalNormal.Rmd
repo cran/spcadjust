@@ -1,0 +1,93 @@
+<!--
+%\VignetteEngine{knitr::knitr}
+%\VignetteIndexEntry{CUSUM Chart with estimated In-Control State}
+-->
+CUSUM Chart with estimated In-Control State
+===========================================
+Using Normality Assumptions
+---------------------------
+The following is a simple application for CUSUM charts, assuming that
+all observations are normally distributed.
+
+Based on $n$ past in-control  observations $X_{-n},\dots,X_{-1}$,
+the in-control mean is estimated by
+$\hat \mu = \frac{1}{n}\sum_{i=-n}^{-1} X_i$
+and the in-control variance by
+$\hat \sigma^2=\frac{1}{n-1}\sum_{i=-n}^{-1} (X_i-\hat \mu)^2$.
+Based on new observations $X_1,X_2,\dots$, the CUSUM chart is then defined by
+$$
+S_0=0, \quad S_t=\max\left(0,\frac{S_{t-1}+X_t-\hat \mu-\Delta/2}{\hat \sigma}\right).
+$$
+
+```{r,echo=FALSE}
+set.seed(12381900)
+```
+
+The following generates a data set of past observations (replace this with your observed past data).
+```{r}
+X <-  rnorm(250)
+```
+```{r,fig=TRUE,fig.width=8,fig.height=3,echo=FALSE}
+par(mar=c(4,5,0,0))
+plot(-(250:1),X,xlab="t",ylab=expression(X[t]))
+```
+
+Next, we initialise and compute the resulting estimate for running the chart - in this case $\hat \mu$ and $\hat \sigma$.
+```{r}
+library(spcadjust)
+chart <- new("SPCCUSUMNormal",Delta=1);
+xihat <- xiofdata(chart,X)
+str(xihat)
+```
+Calibrating the Chart to a Given Average Run Length (ARL)
+---------------------------------------------------
+
+We now compute a threshold that  with roughly 90\%
+probability  results in an average run length of at least 100 in control.
+This is based on parametric resampling assuming normality
+of the observations.
+
+```{r}
+cal <- SPCproperty(data=X,nrep=50,
+            property=new("calARLCUSUM",chart=chart,target=100))
+cal
+```
+You should
+increase the number of bootstrap replications (the argument nrep) for
+real applications.
+
+Run the chart
+---------------------------------------------------
+
+Next, we run  the chart with new observations (that happen to be in-control).
+```{r}
+newX <- rnorm(100)
+S <- runchart(chart, newdata=newX,xi=xihat)
+```
+
+```{r,fig=TRUE,fig.width=10,fig.height=4}
+par(mfrow=c(1,2),mar=c(4,5,0,0))
+plot(newX,xlab="t")
+plot(S,ylab=expression(S[t]),xlab="t",type="b",ylim=range(S,cal@res+1,cal@raw))
+lines(c(0,100),rep(cal@res,2),col="red")
+lines(c(0,100),rep(cal@raw,2),col="blue")
+legend("topleft",c("Adjusted Threshold","Unadjusted Threshold"),col=c("red","blue"),lty=1)
+```
+
+
+In the next example, the  chart is run with data that is   out-of-control from time 51 onwards.
+```{r}
+newX <- rnorm(100,mean=c(rep(0,50),rep(1,50)))
+S <- runchart(chart, newdata=newX,xi=xihat)
+```
+
+```{r,fig=TRUE,fig.width=10,fig.height=4,echo=FALSE}
+par(mfrow=c(1,2),mar=c(4,4,0,0))
+plot(newX,xlab="t")
+plot(S,ylab=expression(S[t]),xlab="t",type="b",ylim=pmin(range(S,cal@res,cal@raw),15))
+lines(c(0,100),rep(cal@res,2),col="red")
+lines(c(0,100),rep(cal@raw,2),col="blue")
+legend("topleft",c("Adjusted Threshold","Unadjusted Threshold"),col=c("red","blue"),lty=1)
+```
+
+

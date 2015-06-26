@@ -1,0 +1,103 @@
+<!--
+%\VignetteEngine{knitr::knitr}
+%\VignetteIndexEntry{CUSUM Chart based on Linear Regression Models with Estimated Parameters}
+-->
+CUSUM Chart with estimated In-Control State
+===========================================
+Using Nonparametric bootstrap
+---------------------------
+The following is an example of an application to a CUSUM charts based
+on a linear regression model.
+
+Assume we have $n$ past in-control  data $(Y_{-n},X_{-n}),\ldots,(Y_{-1},X_{-1})$,
+where $Y_i$ is a response variable and $X_i$ is a corresponding vector
+of covariates. The parameters $\beta$ of a linear model $\mbox{E}
+Y=X\beta$ is estimated  using the lm function. The corresponding risk
+adjusted CUSUM chart to detect a shift of $\Delta>0$ in the mean of
+the response for new observations $(Y_{1},X_{1}),\ldots,(Y_{n},X_{n})$ is then defined by
+$$
+S_0=0, \quad S_t=\max\left(0,S_{t-1}+Y_t-X_t\hat\beta-\Delta/2 \right).
+$$
+
+```{r,echo=FALSE}
+set.seed(12381900)
+```
+
+The following generates a data set of past observations (replace this
+with your observed past data) from the model
+$\mbox{E}Y=2+x_1+x_2+x_3$ with standard normal noise and distribution
+of the covariate values as specified below. 
+```{r}
+n <- 1000
+Xlinreg <- data.frame(x1= rbinom(n,1,0.4), x2= runif(n,0,1), x3= rnorm(n))
+Xlinreg$y <- 2 + Xlinreg$x1 + Xlinreg$x2 + Xlinreg$x3 + rnorm(n)
+```
+
+Next, we initialise and compute the resulting estimate for running the chart - in this case $\hat \beta$. 
+```{r}
+library(spcadjust)
+chartlinreg <- new("SPCCUSUMlm",Delta=1,formula="y~x1+x2+x3")
+xihat <- xiofdata(chartlinreg,Xlinreg)
+xihat
+```
+
+Calibrating the Chart to a Given Average Run Length (ARL)
+---------------------------------------------------
+
+Next find the threshold that with roughly 90\%
+probability  results in an average run length of at least 100 in control. 
+You should increase the number of bootstrap replications (the argument nrep) for real applications.
+
+```{r}
+cal <- SPCproperty(data=Xlinreg,
+             nrep=100,
+             property=new("calARLCUSUM",chart=chartlinreg,target=100))
+cal
+```
+
+```{r,echo=FALSE}
+set.seed(12381903)
+```
+
+Run the chart
+---------------------------------------------------
+
+Next, we run  the chart with new observations (that are in-control).
+```{r}
+n <- 100
+newXlinreg <- data.frame(x1= rbinom(n,1,0.4), x2= runif(n,0,1), x3=rnorm(n))
+newXlinreg$y <- 2 + newXlinreg$x1 + newXlinreg$x2 + newXlinreg$x3 + rnorm(n)
+S <- runchart(chartlinreg, newdata=newXlinreg,xi=xihat)
+```
+
+
+```{r,fig=TRUE,fig.width=10,fig.height=4,echo=FALSE}
+par(mfrow=c(1,1),mar=c(4,5,0,0))
+plot(S,ylab=expression(S[t]),xlab="t",type="b",ylim=range(S,cal@res+1,cal@raw))
+lines(c(0,100),rep(cal@res,2),col="red")
+lines(c(0,100),rep(cal@raw,2),col="blue")
+legend("topleft",c("Adjusted Threshold","Unadjusted Threshold"),col=c("red","blue"),lty=1)
+```
+
+In the next example, the  chart is run with data that is
+out-of-control from time 51 and onwards.
+```{r}
+n <- 100
+newXlinreg <- data.frame(x1= rbinom(n,1,0.4), x2= runif(n,0,1),x3=rnorm(n))
+outind <- c(rep(0,50),rep(1,50))
+newXlinreg$y <- 2 + newXlinreg$x1 + newXlinreg$x2 + newXlinreg$x3 + rnorm(n)+outind
+S <- runchart(chartlinreg, newdata=newXlinreg,xi=xihat)
+```
+
+```{r,fig=TRUE,fig.width=10,fig.height=4,echo=FALSE}
+par(mfrow=c(1,1),mar=c(4,5,0,0))
+plot(S,ylab=expression(S[t]),xlab="t",type="b",ylim=range(S,cal@res+1,cal@raw))
+lines(c(0,100),rep(cal@res,2),col="red")
+lines(c(0,100),rep(cal@raw,2),col="blue")
+legend("topleft",c("Adjusted Threshold","Unadjusted Threshold"),col=c("red","blue"),lty=1)
+```
+
+
+
+
+
