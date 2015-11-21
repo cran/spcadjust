@@ -1,344 +1,254 @@
-#definition of charts
-setClass("SPCchart")
+############################################
+## Base Classes and Computational Methods ##
+############################################
 
+## for NAMESPACE file
+#' @import methods stats graphics utils
+#' @include model.R
+NULL
+
+#' Virtual Base Class for Control Charts
+#'
+#' Virtual S4 base class for Control Charts.
+#'
+#' @slot model The data model to be used in the chart. Must be of type
+#' \code{\link{SPCDataModel}}.
+#'
+#' @export
+setClass("SPCchart",representation=list(model="SPCDataModel"))
+
+#' Estimate Chart Parameters
+#'
+#' Estimates the parameters used to run a control chart from given
+#' data.
+#'
+#' @param chart the control chart to be used.
+#' @param data the data to be used.
+#'
+#' @return The parameter values for running the control chart \code{chart}.
+#' @export
 setGeneric("xiofdata",def=function(chart,data){standardGeneric("xiofdata")})
+
+#' @describeIn xiofdata Standard method which simply first applies
+#' PofData to get a model and then xiofP to get the parameters.
+#' @export
 setMethod("xiofdata", signature="SPCchart", function(chart,data){
-    xiofP(chart,Pofdata(chart,data))
+    chart@model$xiofP(chart@model$Pofdata(data))
 })
 
-setGeneric("Pofdata",def=function(chart,data){standardGeneric("Pofdata")})
-setGeneric("xiofP",def=function(chart,P){standardGeneric("xiofP")})
-setGeneric("resample",def=function(chart,P){standardGeneric("resample")})
 
 
+#' Updates of a Control Chart
+#'
+#' Computes updates of a control chart using the given parameters and the given data.
+#'
+#' @param chart the control chart.
+#' @param xi the parameters used for running the chart.
+#' @param data the observed data.
+#'
+#' @return A vector of the same length as data.
+#' @export
 setGeneric("updates", def= function(chart,xi,data)  standardGeneric("updates"))
+
+#' @describeIn updates Standard method which simply first applies
+#' getresiduals from the data model.
+#' @export
+setMethod("updates", signature="SPCchart", function(chart,xi,data){
+    chart@model$updates(xi,data)
+})
+
+
+#' CDF of Updates of a Control Chart
+#'
+#' Consider running a control chart with given parameters with data
+#' coming from a given probability model. This function computes the
+#' cumulative distribution function (CDF) of the updates of the
+#' control charts as they would be computed by the method \code{\link{updates}}.
+#'
+#' @param chart the chart to be used.
+#' @param P the probability model from which data is generated.
+#' @param xi the parameters of the control chart.
+#'
+#' @return A function mapping one-dimensional numerical values into
+#' the interval [0,1], having all properties of a cumulative
+#' distribution function.
+#'
+#' @export
 setGeneric("getcdfupdates", def= function(chart, P, xi) standardGeneric("getcdfupdates"))
 
-setClass("SPCCUSUM",contains="SPCchart",representation("VIRTUAL"))
+
+#' @describeIn getcdfupdates Standard method which simply first applies
+#' getcdfresiduals from the data model.
+#' @export
+setMethod("getcdfupdates", signature="SPCchart", function(chart,P, xi){
+    chart@model$getcdfupdates(P=P,xi=xi)
+})
+
+
+#' Runs a chart
+#'
+#' Generic method for running a chart on new data using given
+#' parameters \code{xi}.
+#' 
+#' @param chart the chart to be used.
+#' @param newdata the new observed data.
+#' @param xi the parameters to be used in running the chart.
+#'
+#' @return The path of the chart over time.
+#'
+#' @export
 setGeneric("runchart",def=function(chart,newdata,xi){standardGeneric("runchart")})
-setMethod("runchart", signature="SPCCUSUM", function(chart,newdata,xi){
-    R <- cumsum(updates(chart,xi=xi, data=newdata))
-    R - cummin(R)
-})
 
-############ #setting up CUSUM charts....
-setClass("SPCCUSUMNormal", contains="SPCCUSUM",representation=list(Delta="numeric"))
-setMethod("updates", signature="SPCCUSUMNormal",
-          function(chart,xi,data) (data-xi$mu-chart@Delta/2)/xi$sd)
-setMethod("Pofdata", signature="SPCCUSUMNormal",
-          function(chart,data){
-              list(mu= mean(data), sd= sd(data), m=length(data))
-          })
-setMethod("xiofP", signature="SPCCUSUMNormal",
-          function(chart,P) P)
-setMethod("resample", signature="SPCCUSUMNormal",
-          function(chart,P) P$sd*rnorm(P$m)+P$mu)
-setMethod("getcdfupdates", signature="SPCCUSUMNormal",
-          function(chart, P, xi) {
-              muupd <- (P$mu-xi$mu-chart@Delta/2)/xi$sd
-              sdsqupd <- P$sd/xi$sd
-              function(x) pnorm(x, mean=muupd, sd=sdsqupd)
-          })
-
-setClass("SPCCUSUMNonpar", contains="SPCCUSUM", representation("VIRTUAL"))
-setMethod("Pofdata", signature="SPCCUSUMNonpar", function(chart,data) data)
-setMethod("resample", signature="SPCCUSUMNonpar",
-          function(chart,P){
-              if (is.vector(P))
-                  sample(P,replace=TRUE)
-              else
-                  P[sample.int(dim(P)[1],replace=TRUE),]
-          })
-setMethod("getcdfupdates", signature="SPCCUSUMNonpar",
-          function(chart, P, xi) ecdf(updates(chart,xi=xi,data=P)))
-
-
-
-setClass("SPCCUSUMNonparCenterScale", contains="SPCCUSUMNonpar",
-         representation=list(Delta="numeric"))
-setMethod("xiofP", signature="SPCCUSUMNonparCenterScale",
-          function(chart,P) list(mu=mean(P),sd=sd(P)))
-setMethod("updates", signature="SPCCUSUMNonparCenterScale",
-          function(chart,xi,data) (data-xi$mu-chart@Delta/2)/xi$sd)
-
-##### CUSUM chart for linear models
-setClass("SPCCUSUMlm", contains="SPCCUSUMNonpar",
-          representation=list(Delta="numeric",formula="character"))
-setMethod("xiofP", "SPCCUSUMlm",
-           function(chart,P)
-           lm(chart@formula,data=P)
-           )
-setMethod("updates", "SPCCUSUMlm",
-           function(chart,xi,data){
-               response <-  model.response( model.frame( chart@formula,data=data))
-               response - predict(xi,newdata=data) - chart@Delta/2
-           }
-           )
-
-#### CUSUM chart for logistic regression
-setClass("SPCCUSUMlogreg", contains="SPCCUSUMNonpar",
-         representation(Delta="numeric",formula="character"))
-setMethod("xiofP","SPCCUSUMlogreg",
-          function(chart,P)
-          glm(chart@formula,data=P,family=binomial("logit"))
-          )
-setMethod("updates", "SPCCUSUMlogreg",
-          function(chart,xi,data){
-              xbeta <- predict.glm(xi,newdata=data)
-              response <-  model.response( model.frame( chart@formula,data=data))
-              chart@Delta*response+ log(1+exp(xbeta))- log(1+exp(chart@Delta+xbeta))
-            })
-
-
-
-###############################
-##properties - general definitions
-setClass("SPCproperty",
-         representation(chart="SPCchart",lowerconf="logical","VIRTUAL")
-         )
-
-setGeneric("SPCq", def=function(property, P, xi) standardGeneric("SPCq"))
-setGeneric("qtrafo", def=function(property, x) standardGeneric("qtrafo"))
-setGeneric("SPCoutput", def=function(property,  result) standardGeneric("SPCoutput"))
-
-
-
-### general definition for ARL
-setClass("SPCARL",
-         representation(threshold="numeric","VIRTUAL"),
-         prototype=list(lowerconf=FALSE),
-         contains=c("SPCproperty")
-         )
-setMethod("SPCoutput", signature="SPCARL",
-          function(property,result)
-          paste("A threshold of  ", property@threshold, " gives an in-control ARL of at least ", format(result,digits=4), ".", sep="",collapse="")
-          )
-setMethod("qtrafo", signature="SPCARL", function(property,x) exp(x))
-
-### general definition for hitting probabilities
-setClass("SPChitprob",
-         representation(threshold="numeric",nsteps="numeric","VIRTUAL"),
-         prototype=list(lowerconf=TRUE),
-         contains=c("SPCproperty"))
-setMethod("SPCoutput", signature="SPChitprob",
-          function(property,result)
-          paste("A threshold of  ", property@threshold, " gives an in-control false alarm probability of at most ", format(result,digits=4), " within ",property@nsteps," steps.", sep="",collapse="")
-          )
-setMethod("qtrafo", signature="SPChitprob", function(property,x) exp(x)/(1+exp(x)))
-
-##### general definitions for calibrating to a given ARL
-setClass("SPCcalARL", representation(target="numeric","VIRTUAL"),
-         prototype=list(lowerconf=TRUE),
-         contains=c("SPCproperty"))
-setMethod("qtrafo", signature="SPCcalARL", function(property,x) exp(x))
-setMethod("SPCoutput", signature="SPCcalARL",
-          function(property,result)
-          paste("A threshold of ", format(result,digits=4), " gives an in-control ARL of at least ", property@target, ".", sep="",collapse="")
-          )
-##### general definitions for calibrating to a given hitting probability
-setClass("SPCcalhitprob",
-         representation(target="numeric",nsteps="numeric","VIRTUAL"),
-         prototype=list(lowerconf=TRUE),
-         contains=c("SPCproperty"))
-setMethod("SPCoutput", signature="SPCcalhitprob",
-          function(property,result)
-          paste("A threshold of ", format(result,digits=4), " gives an in-control false alarm probability of at most ", property@target, " within ",property@nsteps, " steps.", sep="",collapse="")
-          )
-setMethod("qtrafo", signature="SPCcalhitprob", function(property,x) exp(x))
-
-
-#############################
-#properties for CUSUM charts
-############################
-
-#CUSUM calibrate ARL
-setClass("calARLCUSUM", representation=list(gridpoints="numeric"),
-         prototype=list(gridpoints=75),
-         contains=c("SPCcalARL"))
-setMethod("SPCq", signature="calARLCUSUM",
-          function(property,P,xi)
-          log(calibrateARL_Markovapprox(pobs=getcdfupdates(property@chart,xi=xi, P=P),ARL=property@target,gridpoints=property@gridpoints))
-          )
-
-#CUSUM calibrate hitting probability
-setClass("calhitprobCUSUM",
-         representation=list(gridpoints="numeric"),
-         prototype=list(gridpoints=75),
-         contains=c("SPCcalhitprob"))
-setMethod("SPCq", signature="calhitprobCUSUM",
-          function(property,P,xi)
-          log(calibratehitprob_Markovapprox(pobs=getcdfupdates(property@chart,xi=xi, P=P),hprob=property@target,n=property@nsteps,gridpoints=property@gridpoints))
-          )
-
-#CUSUM - ARL
-setClass("ARLCUSUM", representation=list(gridpoints="numeric",chart="SPCCUSUM"),
-         prototype=list(gridpoints=75),
-         contains=c("SPCARL"))
-setMethod("SPCq", signature="ARLCUSUM",
-          function(property,P,xi)
-          as.double(log(ARL_Markovapprox(c=property@threshold,pobs=getcdfupdates(property@chart,xi=xi, P=P),gridpoints=property@gridpoints)))
-          )
-
-#CUSUM - hitting probability
-setClass("hitprobCUSUM",
-         representation=list(gridpoints="numeric"),
-         prototype=list(gridpoints=75),
-         contains=c("SPChitprob"))
-setMethod("SPCq", signature="hitprobCUSUM",
-          function(property,P,xi){
-              res <- hitprob_Markovapprox(c=property@threshold,pobs=getcdfupdates(property@chart,xi=xi, P=P),n=property@nsteps,gridpoints=property@gridpoints);
-              as.double(log(res/(1-res)))
-          })
-
-
-######
-############ #definitions for Shewhart charts....
-
-setClass("SPCShew",contains=c("SPCchart","VIRTUAL"),
-         slots=list(twosided="logical"),
-         prototype=list(twosided=FALSE))
-setMethod("runchart", signature="SPCShew", function(chart,newdata,xi){
-    updates(chart,xi=xi, data=newdata)
-})
-
-#parametric normal
-setClass("SPCShewNormalCenterScale",contains="SPCShew")
-setMethod("Pofdata", signature="SPCShewNormalCenterScale",
-          function(chart,data){
-              list(mu= mean(data), sd= sd(data), m=length(data))
-          })
-setMethod("xiofP", signature="SPCShewNormalCenterScale",
-          function(chart,P) P)
-setMethod("resample", signature="SPCShewNormalCenterScale",
-          function(chart,P) P$sd*rnorm(P$m)+P$mu)
-setMethod("getcdfupdates", signature="SPCShewNormalCenterScale",
-          function(chart, P, xi) {
-              muupd <- (P$mu-xi$mu)/xi$sd
-              sdsqupd <- P$sd/xi$sd
-              if (chart@twosided)
-                  function(x) pmax(0,pnorm(x, mean=muupd, sd=sdsqupd)-pnorm(-x, mean=muupd, sd=sdsqupd))
-              else
-                  function(x) pnorm(x, mean=muupd, sd=sdsqupd)
-          })
-setMethod("updates",signature="SPCShewNormalCenterScale",
-          function(chart,xi,data) (data-xi$mu)/xi$sd
-)
-
-
-#nonparametric center and scaling
-setClass("SPCShewNonparCenterScale",contains="SPCShew")
-setMethod("Pofdata", signature="SPCShewNonparCenterScale",
-          function(chart,data) data
-          )
-setMethod("xiofP", signature="SPCShewNonparCenterScale",
-          function(chart,P) list(mu=mean(P),sd=sd(P)))
-setMethod("resample", signature="SPCShewNonparCenterScale",
-          function(chart,P){
-              if (is.vector(P))
-                  sample(P,replace=TRUE)
-              else
-                  P[sample.int(dim(P)[1],replace=TRUE),]
-          })
-setMethod("getcdfupdates", signature="SPCShewNonparCenterScale",
-          function(chart, P, xi){
-              if (chart@twosided)
-                  ecdf(abs(updates(chart, xi=xi,data=P)))
-              else
-                  ecdf(updates(chart, xi=xi,data=P))
-          }
-          )
-setMethod("updates",signature="SPCShewNonparCenterScale",
-          function(chart,xi,data) (data-xi$mu)/xi$sd)
-
-#####################
-#properties for Shewhart charts
-#####################
-
-###ARL for Shewhart charts
-setClass("ARLShew", contains="SPCARL")
-setMethod("SPCq", signature="ARLShew",
-          function(property,P,xi)
-           -log(1-getcdfupdates(property@chart, xi=xi, P=P)(property@threshold))
-          )
-
-#calibrating hitting probability for Shew charts
-qShewcalibrateARL <- function(pobs,target){
-    cmax <- 1;
-    while((1/(1-pobs(cmax)))<target) cmax <- cmax*2
-    cmin <- 1
-    while((1/(1-pobs(cmin)))>target&&cmin>1e-10) cmin <- cmin/2
-    if (cmin<=1e-10){
-        warning(paste("cmin=",cmin,"\n"))
-        stop()
-    }
- uniroot(function(x) target-(1/(1-pobs(x))),lower=cmin,upper=cmax)$root
-}
-qShewlogcalibrateARL <- function(pobs, target) log(qShewcalibrateARL(pobs,target))
-setClass("calARLShew",contains=c("SPCcalARL"))
-setMethod("SPCq", signature="calARLShew",
-          function(property,P,xi)
-          qShewlogcalibrateARL(pobs=getcdfupdates(property@chart, xi=xi, P=P),target=property@target)
-          )
-
-###########computing hitting probabilties for Shewhart charts
-setClass("hitprobShew", contains=c("SPChitprob"))
-setMethod("SPCq", signature="hitprobShew",
-          function(property,P,xi){
-              survprob1step <- getcdfupdates(property@chart, xi=xi, P=P)(property@threshold)
-              log(1-survprob1step^property@nsteps)-property@nsteps*log(survprob1step)
-          }
-          )
-
-###########calibrating threshold for a desired  hitting probabilties for Shewhart charts
-setClass("calhitprobShew",contains=c("SPCcalhitprob"))
-qShewcalibratehitprob <- function(pobs,target,nsteps){
-  cmax <- 1;
-  while((1-pobs(cmax)^nsteps)>target) cmax <- cmax*2
-  cmin <- 1
-  while((1-pobs(cmin)^nsteps)<target&&cmin>1e-10) cmin <- cmin/2
-  if (cmin<=1e-10){
-    warning(paste("cmin=",cmin,"\n"))
-    stop()
-  }
- uniroot(function(x) target-(1-pobs(x)^nsteps),lower=cmin,upper=cmax)$root
-}
-qShewlogcalibratehitprob <- function(pobs, target, nsteps) log(qShewcalibratehitprob(pobs,target,nsteps))
-setMethod("SPCq", signature="calhitprobShew",
-          function(property,P,xi)
-          qShewlogcalibratehitprob(pobs=getcdfupdates(property@chart, xi=xi, P=P),target=property@target,nsteps=property@nsteps)
-          )
-
+#' Returns a List to Compute Properties of a chart
+#'
+#' Returns functions to compute desired properties of a given
+#' control chart.
+#' 
+#' @param chart the chart to be used.
+#' @param property the name of the property.
+#' @param params additional parameters needed for the computations.
+#'
+#' @return A list with the elements \code{q}, \code{trafo}, \code{lowerconf}, \code{format}.
+#' \itemize{
+#' \item{\code{q(P,xi)}: The transformed property of interest. To improve the bootstrap a log transform is used for \code{calARL},\code{calhitprob} and \code{ARL}, and a logit transform for \code{hitprob}. This function depends on the distribution of updates \code{P} and the chart parameters \code{xi}.} 
+#' \item{\code{trafo(x)}: The inverse of the transformation of the property used in the bootstrap. Needed to back-transform the result to the correct scale. }
+#' \item{\code{lowerconf}: Logical value. TRUE if a lower confidence interval should be reported, FALSE otherwise. Default is TRUE for properties \code{calARL},  \code{calhitprob} and \code{hitprob} and FALSE for \code{ARL}. }
+#' \item{\code{format(res)}: Output summary given as a text string. }
+#' }
+#' @export
+setGeneric("getq",def=function(chart,property,params){standardGeneric("getq")})
 
 
 
 
 #################
 #Computational routines
-SPCproperty <- function(data, nrep=500,property, covprob=0.9){
-    Phat <-  Pofdata(property@chart,data)
-    qdiff <- replicate(nrep,{
-        Phatstar<-Pofdata(property@chart,resample(property@chart,Phat))
-        xihatstar <- xiofP(property@chart,Phatstar)
-        SPCq(property,xi=xihatstar,P=Phatstar)-SPCq(property,xi=xihatstar,P=Phat)
-    })
-    raw <- SPCq(property,xi=xiofP(property@chart,Phat),P=Phat)
-    if (property@lowerconf)
-        res <- qtrafo(property,raw+quantile(-qdiff,covprob))
+
+#' Computes bootstrap adjusted properties for control charts
+#'
+#' Computes bootstrap adjusted properties for control charts.
+#'
+#' @param data The observed data.
+#' @param nrep The number of bootstrap repetitions. Default 500.
+#' @param chart The chart to be used.
+#' @param property The property to be computed. A string. Must be implemented by the chart.
+#' @param params Additional parameters for computing the property.
+#' @param covprob The coverage probability of the adjustment. Default 0.9.
+#' @param quiet Logical value indicating if progress bar should be suppressed. Default FALSE.
+#' @param reportdistr Logical value indicating if the ecdf of the bootstrap distribution should be plotted. Default FALSE.
+#' @param parallel Number of cores to use for parallel computations
+#' (using mclapply from the package parallel). Defaults to 1. If set
+#' to \code{Inf} then the number of cores is automatically detected
+#' and all but one are used.
+#' 
+#'
+#' @return An object of type SPCpropertyres.
+#'
+#' @seealso  \code{\link{SPC2sidedconfint}}
+#'
+#' @examples
+#'  # calibrate CUSUM chart to an in-control ARL of 100.
+#'  # run with a larger number of replications in real examples!
+#'  X <-  rnorm(100) #observed data
+#'  chart <- new("SPCCUSUM",model=SPCModelNormal(Delta=1)) # CUSUM chart with normal observations
+#' SPCproperty(data=X,nrep=15,chart=chart,property="calARL", params=list(target=100))
+#'
+#' @export
+SPCproperty <- function(data, nrep=500,chart, property,params,covprob=0.9,quiet=FALSE,reportdistr=FALSE,parallel=1){
+    model <- chart@model
+    Phat <-  model$Pofdata(data)
+    qfunc <- getq(chart,property,params)
+    if(parallel>1){
+        if (!requireNamespace("parallel", quietly = TRUE)) {
+            stop("parallel needed for this function to work. Please install it.",
+                 call. = FALSE)
+        }
+        if (parallel==Inf)
+            cores <- parallel::detectCores()-1
+        else
+            cores <- parallel;
+        qdifffunc <- function(...){
+            qdiff <- replicate(ceiling(nrep/cores),{
+                Phatstar<-model$Pofdata(model$resample(Phat))
+                xihatstar <- model$xiofP(Phatstar)
+                qfunc$q(xi=xihatstar,P=Phatstar)-qfunc$q(xi=xihatstar,P=Phat)
+            })
+            qdiff
+        }
+        qdiff <- do.call(c,parallel::mclapply(seq_len(cores),qdifffunc,mc.cores=cores))
+    }else{
+        if (!quiet){
+            pb <- txtProgressBar(min=0,max=nrep+1,initial=0,style=3)
+            pbpos <- 0;
+        }
+      qdiff <- replicate(nrep,{
+        if (!quiet){
+         setTxtProgressBar(pb, pbpos)
+          pbpos <<- pbpos+1;
+        }
+        Phatstar<-model$Pofdata(model$resample(Phat))
+        xihatstar <- model$xiofP(Phatstar)
+        qfunc$q(xi=xihatstar,P=Phatstar)-qfunc$q(xi=xihatstar,P=Phat)
+      })
+        if (!quiet) setTxtProgressBar(pb, pbpos)
+    }
+    raw <- qfunc$q(xi=model$xiofP(Phat),P=Phat)
+    if (parallel==1&&!quiet) setTxtProgressBar(pb, nrep+1)
+    if (qfunc$lowerconf)
+        res <- qfunc$trafo(raw+quantile(-qdiff,covprob))
     else
-        res <- qtrafo(property,raw-quantile(qdiff,covprob))
-    new("SPCpropertyres", res=res, raw=qtrafo(property,raw),covprob=covprob,property=property,nrep=nrep)
+        res <- qfunc$trafo(raw-quantile(qdiff,covprob))
+    if (parallel==1&&!quiet) close(pb)
+    if(reportdistr)
+      plot(ecdf(qdiff), main="ECDF of bootstrap distribution")
+    new("SPCpropertyres", res=res, raw=qfunc$trafo(raw),
+        covprob=covprob,chart=chart,property=property,
+        nrep=nrep,params=params,restext=sapply(res,qfunc$format))
 }
 
-setClass("SPCpropertyres", representation=list(nrep="numeric", property="SPCproperty", covprob="numeric",res="numeric",raw="numeric"))
+#' Results of SPCproperty.
+#'
+#' @slot nrep number of repetitions used in the simulation.
+#' @slot chart the chart used.
+#' @slot property the property of interest, \code{ARL}, \code{calARL}, \code{calhitprob} or \code{hitprob}. 
+#' @slot covprob the probability of the guaranteed conditional performance.
+#' @slot res the guaranteed conditional performance.
+#' @slot raw the unadjusted result.
+#' @slot params additional parameters used for computing this property.
+#' @slot restext a readable version of the result.
+#'
+#' @export
+setClass("SPCpropertyres", representation=list(nrep="numeric", chart="SPCchart",property="character", covprob="numeric",res="numeric",raw="numeric",params="list",restext="character"))
+#' @describeIn SPCpropertyres Prints the object nicely.
+#' @param object the result to be shown.
+#' @export
 setMethod("show", "SPCpropertyres",  function(object){
     for (i in 1:length(object@covprob)){
-        cat(paste(strwrap(exdent=2,paste(object@covprob[i]*100,"% CI: ",SPCoutput(object@property,object@res[i]))),collapse="\n"),"\n")
+        cat(paste(strwrap(exdent=2,paste(object@covprob[i]*100,"% CI: ",object@restext[i])),collapse="\n"),"\n")
     }
     cat("Unadjusted result: ", format(object@raw,digits=4),"\n")
     cat("Based on ",object@nrep, "bootstrap repetitions.\n")
 })
 
 
-SPC2sidedconfint <- function(data, nrep=500,property, covprob=0.9){
-    sort(SPCproperty(data, nrep=nrep, property=property,  covprob=c((1-covprob)/2,1-(1-covprob)/2))@res)
+#' Computes a two-sided confidence interval for properties of a control chart.
+#'
+#' @param ... Parameters to be passed to SPCproperty
+#' @param covprob The coverage probability of the adjustment.
+#'
+#' @return The desired confidence interval, a vector of length 2.
+#'
+#' @seealso \code{\link{SPCproperty}}
+#'
+#' @examples
+#' # Compute 2-sided CI for the ARL of a CUSUM control chart assuming normality.
+#'  X <-  rnorm(100) #observed data
+#'  chart <- new("SPCCUSUM",model=SPCModelNormal(Delta=1)) # CUSUM chart with normal observations
+#'  SPC2sidedconfint(data=X,nrep=100,covprob=0.95,
+#'             property="ARL",chart=chart,params=list(threshold=4))
+#'
+#' @export
+SPC2sidedconfint <- function(covprob=0.9,...){
+    sort(SPCproperty(covprob=c((1-covprob)/2,1-(1-covprob)/2),...)@res)
 }
+

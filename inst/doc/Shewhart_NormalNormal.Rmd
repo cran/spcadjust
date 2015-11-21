@@ -37,7 +37,7 @@ plot(-(250:1),X,xlab="t",ylab=expression(X[t]))
 Next, we initialise and compute the resulting estimate for running the chart - in this case $\hat \mu$ and $\hat \sigma$.
 ```{r}
 library(spcadjust)
-chartShew <- new("SPCShewNormalCenterScale",twosided=TRUE);
+chartShew <- new("SPCShew",model=SPCModelNormal(),twosided=TRUE);
 xihat <- xiofdata(chartShew,X)
 str(xihat)
 ```
@@ -53,7 +53,8 @@ real applications.
 
 ```{r}
 cal <- SPCproperty(data=X,nrep=100,
-            property=new("calARLShew",chart=chartShew,target=741))
+                   property="calARL", chart=chartShew,
+                   params=list(target=741),quiet=TRUE)
 cal
 ```
 
