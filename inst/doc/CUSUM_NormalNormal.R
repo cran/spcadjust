@@ -24,7 +24,7 @@ newX <- rnorm(100)
 S <- runchart(chart, newdata=newX,xi=xihat)
 
 ## ----fig=TRUE,fig.width=10,fig.height=4----------------------------------
-par(mfrow=c(1,2),mar=c(4,5,0,0))
+par(mfrow=c(1,2),mar=c(4,5,0.1,0.1))
 plot(newX,xlab="t")
 plot(S,ylab=expression(S[t]),xlab="t",type="b",ylim=range(S,cal@res+1,cal@raw))
 lines(c(0,100),rep(cal@res,2),col="red")
@@ -36,7 +36,7 @@ newX <- rnorm(100,mean=c(rep(0,50),rep(1,50)))
 S <- runchart(chart, newdata=newX,xi=xihat)
 
 ## ----fig=TRUE,fig.width=10,fig.height=4,echo=FALSE-----------------------
-par(mfrow=c(1,2),mar=c(4,4,0,0))
+par(mfrow=c(1,2),mar=c(4,5,0.1,0.1))
 plot(newX,xlab="t")
 plot(S,ylab=expression(S[t]),xlab="t",type="b",ylim=pmin(range(S,cal@res,cal@raw),15))
 lines(c(0,100),rep(cal@res,2),col="red")

@@ -13,7 +13,7 @@ SPCproperty(data=X,nrep=50,property="calARL",
             chart=chartrobust,params=list(target=100),quiet=TRUE)
 
 ## ------------------------------------------------------------------------
-SPCModelExponential=function(Delta=1){
+SPCModelExponential=function(Delta=1.25){
     structure(
         list(
             Pofdata=function(data){
@@ -32,6 +32,7 @@ SPCModelExponential=function(Delta=1){
         class="SPCDataModel")
 }
 
+## ------------------------------------------------------------------------
 ExpCUSUMchart=new("SPCCUSUM",model=SPCModelExponential(Delta=1.25))
 
 ## ----echo=FALSE----------------------------------------------------------
@@ -44,8 +45,8 @@ plot(runchart(ExpCUSUMchart, newdata=rexp(100),xi=xiofdata(ExpCUSUMchart,X)),
 
 ## ------------------------------------------------------------------------
 SPCproperty(data=X,nrep=100,property="hitprob",
-chart=ExpCUSUMchart,params=list(threshold=1,nsteps=100),
-covprob=c(0.5,0.9),quiet=TRUE)
+            chart=ExpCUSUMchart,params=list(threshold=3,nsteps=100),
+            covprob=c(0.5,0.9),quiet=TRUE)
 SPCproperty(data=X,nrep=100,property="ARL",
             chart=ExpCUSUMchart,params=list(threshold=3),covprob=c(0.5,0.9),quiet=TRUE)
 SPCproperty(data=X,nrep=100,property="calARL",chart=ExpCUSUMchart,

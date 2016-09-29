@@ -3,8 +3,21 @@
 %\VignetteIndexEntry{EWMA Chart with estimated In-Control State}
 -->
 
-EWMA Chart with estimated In-Control State
+EWMA chart with estimated in-control state
 ===========================================
+Using normality assumptions
+---------------------------
+The following is an illustration for EWMA charts, assuming that
+all observations are normally distributed.
+
+Based on $n$ past in-control  observations $X_{-n},\dots,X_{-1}$,
+the in-control mean and standard deviation can be estimated by the
+sample mean, $\hat \mu$,  and sample standard deviation, $\hat \sigma$. 
+For new observations $X_1,X_2,\dots$, an EWMA chart based on these
+estimated parameters is defined by
+$$
+M_0=0, \quad  M_t=\lambda \frac{X_t-\hat \mu}{\hat \sigma}+(1-\lambda) M_{t-1}
+$$
 
 
 ```{r,echo=FALSE}
@@ -15,14 +28,10 @@ The following generates a data set of past observations (replace this with your 
 ```{r}
 X <-  rnorm(250)
 ```
-```{r,fig=TRUE,fig.width=8,fig.height=3,echo=FALSE}
-par(mar=c(4,5,0,0))
-plot(-(250:1),X,xlab="t",ylab=expression(X[t]))
-```
 
 
 
-Next, we initialise and compute the resulting estimate for running the
+Next, we initialise the chart and compute the estimates needed for running the
 chart - in this case $\hat \mu$ and $\hat \sigma$. 
 ```{r}
 library(spcadjust)
@@ -30,10 +39,10 @@ chart <- new("SPCEWMA",model=SPCModelNormal(Delta=0),lambda=0.1);
 xihat <- xiofdata(chart,X)
 str(xihat)
 ```
-Calibrating the Chart to a Given Average Run Length (ARL)
+Calibrating the chart to a given average run length (ARL)
 ---------------------------------------------------
 
-We now compute a threshold that  with roughly 90\%
+We now compute a threshold that  with roughly 90%
 probability  results in an average run length of at least 100 in control.
 This is based on parametric resampling assuming normality
 of the observations.
@@ -49,12 +58,13 @@ argument nrep) for real applications.
 Run the chart
 ---------------------------------------------------
 
-Next, we run  the chart with new observations (that happen to be in-control).
+Next, we run  the chart with new observations that are in-control.
 ```{r}
 newX <- rnorm(100)
 S <- runchart(chart, newdata=newX,xi=xihat)
 ```
 
+Then we plot the data and the chart. 
 ```{r,fig=TRUE,fig.width=10,fig.height=4}
 par(mfrow=c(1,2),mar=c(4,5,0.1,0.1))
 plot(newX,xlab="t")
@@ -71,16 +81,17 @@ legend("topleft",c("Adjusted Threshold","Unadjusted Threshold"),col=c("red","blu
 set.seed(123819123)
 ```
 
-In the next example, the  chart is run with data that is   out-of-control from time 51 onwards.
+In the next example, the  chart is run with data that are
+out-of-control from time 51 and onwards.
 ```{r}
 newX <- rnorm(100,mean=c(rep(0,50),rep(-1,50)))
 S <- runchart(chart, newdata=newX,xi=xihat)
 ```
 
 ```{r,fig=TRUE,fig.width=10,fig.height=4,echo=FALSE}
-par(mfrow=c(1,2),mar=c(4,4,0,0))
+par(mfrow=c(1,2),mar=c(4,5,0.1,0.1))
 plot(newX,xlab="t")
-plot(S,ylab=expression(S[t]),xlab="t",type="b",ylim=range(-cal@res,S,cal@res+0.3,cal@raw))
+plot(S,ylab=expression(S[t]),xlab="t",type="b",ylim=range(-cal@res,S,cal@res+0.5,cal@raw))
 lines(c(0,100),rep(cal@res,2),col="red")
 lines(c(0,100),rep(cal@raw,2),col="blue")
 abline(0,0,lty=3)

@@ -1,5 +1,5 @@
 Package: spcadjust
-Version: 1.0
+Version: 1.1
 Date: 2015-11-20
 Title: Functions for Calibrating Control Charts
 Author: Axel Gandy <a.gandy@imperial.ac.uk> and Jan Terje Kvaloy
@@ -13,9 +13,9 @@ License: GPL (>= 2)
 Suggests: knitr, parallel, testthat
 VignetteBuilder: knitr
 Collate: 'CUSUMlib.R' 'model.R' 'main.R' 'CUSUM.R' 'EWMAlib.R' 'EWMA.R'
-        'lm.R' 'logreg.R' 'shewhart.R'
+        'data.R' 'lm.R' 'logreg.R' 'shewhart.R'
 RoxygenNote: 5.0.1
-Packaged: 2015-11-20 13:42:37 UTC; agandy
+Packaged: 2016-09-29 08:54:58 UTC; agandy
 NeedsCompilation: no
 Repository: CRAN
-Date/Publication: 2015-11-21 15:56:31
+Date/Publication: 2016-09-29 11:37:35

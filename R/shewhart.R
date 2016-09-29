@@ -66,7 +66,7 @@ setClass("SPCShew",contains=c("SPCchart"),
 #' the Shewhart chart and returns them.
 #' @export
 setMethod("runchart", signature="SPCShew", function(chart,newdata,xi){
-    updates(chart,xi=xi, data=newdata)
+    chart@model$updates(xi,data=newdata)
 })
 #' @describeIn updates Computes the updates taking into account if the
 #' chart is one-sided or two-sided.

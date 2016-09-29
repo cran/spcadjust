@@ -139,7 +139,7 @@ setGeneric("getq",def=function(chart,property,params){standardGeneric("getq")})
 #' @param parallel Number of cores to use for parallel computations
 #' (using mclapply from the package parallel). Defaults to 1. If set
 #' to \code{Inf} then the number of cores is automatically detected
-#' and all but one are used.
+#' and all but one are used. Has to be set to 1 under Windows.
 #' 
 #'
 #' @return An object of type SPCpropertyres.

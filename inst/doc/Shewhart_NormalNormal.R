@@ -17,7 +17,7 @@ str(xihat)
 ## ------------------------------------------------------------------------
 cal <- SPCproperty(data=X,nrep=100,
                    property="calARL", chart=chartShew,
-                   params=list(target=741),quiet=TRUE)
+                   params=list(target=370),quiet=TRUE)
 cal
 
 ## ----echo=FALSE----------------------------------------------------------
@@ -28,7 +28,7 @@ newX <- rnorm(100)
 S <- runchart(chartShew, newdata=newX,xi=xihat)
 
 ## ----fig=TRUE,fig.width=10,fig.height=4,echo=FALSE-----------------------
-par(mfrow=c(1,2),mar=c(4,5,0,0))
+par(mfrow=c(1,2),mar=c(4,5,0.1,0.1))
 plot(newX,xlab="t")
 plot(S,ylab=expression(S[t]),xlab="t",type="b",ylim=range(S,cal@res+2,cal@raw,-cal@res-1,-cal@raw))
 lines(c(0,100),rep(cal@res,2),col="red")
@@ -42,7 +42,7 @@ newX <- rnorm(100,mean=c(rep(0,50),rep(2,50)))
 S <- runchart(chartShew, newdata=newX,xi=xihat)
 
 ## ----fig=TRUE,fig.width=10,fig.height=4,echo=FALSE-----------------------
-par(mfrow=c(1,2),mar=c(4,4,0,0))
+par(mfrow=c(1,2),mar=c(4,5,0.1,0.1))
 plot(newX,xlab="t")
 plot(S,ylab=expression(S[t]),xlab="t",type="b",ylim=range(S,cal@res+2,cal@raw,-cal@res-1,-cal@raw))
 lines(c(0,100),rep(cal@res,2),col="red")

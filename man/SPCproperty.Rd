@@ -27,7 +27,7 @@ SPCproperty(data, nrep = 500, chart, property, params, covprob = 0.9,
 \item{parallel}{Number of cores to use for parallel computations
 (using mclapply from the package parallel). Defaults to 1. If set
 to \code{Inf} then the number of cores is automatically detected
-and all but one are used.}
+and all but one are used. Has to be set to 1 under Windows.}
 }
 \value{
 An object of type SPCpropertyres.

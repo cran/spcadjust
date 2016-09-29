@@ -4,20 +4,23 @@
 -->
 Extensions 
 ===========================================
-Extensions to other charts and/or estimation procedures
+Extensions to other data models and estimation procedures
 -------------------------------------------------------
 
 
 The framework provided in this package can be easily extended to work
-with different charts and/or estimation procedures. The following are
-some examples of extensions.
+with other charts, other data models and other estimation
+procedures. The following are some examples of extensions.
 
 Robust estimation
 ------------------
-
-The following defines a CUSUM chart using normality assumptions
-to estimate the in-control distribution using Median and MAD. Only
-the method Pofdata of the data model needs to be modified.
+Consider a CUSUM chart for  observations with a normal distribution
+with unknown mean and standard deviation.  We now illustrate  how to
+change the estimation procedure to use the median and the mean absolute deviation (MAD) instead
+of the mean and the sample standard deviation.  To achieve  this we
+only need to modify one function of the existing data 
+model, the method  Pofdata that
+estimates the parameters . 
 ```{r}
 library(spcadjust)
 model <- SPCModelNormal(Delta=1)
@@ -42,10 +45,32 @@ Parametric exponential CUSUM chart
 
 
 
-The following defines a class that defines a CUSUM chart for
-exponentially distributed data with parametric resampling.
+In this example we construct a CUSUM chart for exponentially
+ distributed data with unknown rate $\lambda$. Such a CUSUM can be constructed by defining the
+ updates as the log-likelihood ratio between an out of control model
+ with rate $\Delta\lambda$ and an in-control model with
+ rate $\lambda$. I.e.  
+$$
+S_0=0, \quad S_t=\max\left(0,S_{t-1}+R_t \right)
+$$
+where 
+$$
+R_t=\log\left(
+  \frac{\lambda\Delta\exp(-\lambda\Delta X_t)}{\lambda\exp(-\lambda X_t)}
+\right)
+=\log(\Delta)-\lambda(\Delta-1)X_t
+$$
+defines the updates. 
+
+We choose to use parametric bootstrapping, and
+ the rate is estimated from past data  
+$X_{-n},\dots,X_{-1}$ by the maximum likelihood estimator
+$\hat\lambda=n/\sum_{i=1}^nX_{-i}$.
+
+To implement this CUSUM  we need to define a new data model
+object of class SPCDataModel. The following code does this. 
 ```{r}
-SPCModelExponential=function(Delta=1){
+SPCModelExponential=function(Delta=1.25){
     structure(
         list(
             Pofdata=function(data){
@@ -63,7 +88,15 @@ SPCModelExponential=function(Delta=1){
             updates=function(xi,data) log(Delta)-xi*(Delta-1)*data),
         class="SPCDataModel")
 }
+```
+In the above code Pofdata estimates the probability model, xiofP
+computes the parameter needed to run the chart,
+resample specifies the parametric bootstrap and getcdfupdates specifies
+the cdf of the updates when the parameter estimate xi is used in the
+updates. 
 
+To create a CUSUM chart with this data model we first initialise the chart. 
+```{r}
 ExpCUSUMchart=new("SPCCUSUM",model=SPCModelExponential(Delta=1.25))
 ```
 
@@ -84,8 +117,8 @@ applications increase the number of bootstrap replications (the
 argument nrep) and consider using parallel processing (the argument parallel). 
 ```{r}
 SPCproperty(data=X,nrep=100,property="hitprob",
-chart=ExpCUSUMchart,params=list(threshold=1,nsteps=100),
-covprob=c(0.5,0.9),quiet=TRUE)
+            chart=ExpCUSUMchart,params=list(threshold=3,nsteps=100),
+            covprob=c(0.5,0.9),quiet=TRUE)
 SPCproperty(data=X,nrep=100,property="ARL",
             chart=ExpCUSUMchart,params=list(threshold=3),covprob=c(0.5,0.9),quiet=TRUE)
 SPCproperty(data=X,nrep=100,property="calARL",chart=ExpCUSUMchart,

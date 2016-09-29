@@ -2,17 +2,16 @@
 %\VignetteEngine{knitr::knitr}
 %\VignetteIndexEntry{CUSUM Chart based on Linear Regression Models with Estimated Parameters}
 -->
-CUSUM Chart with estimated In-Control State
-===========================================
-Using Nonparametric bootstrap
----------------------------
-The following is an example of an application to a CUSUM charts based
+CUSUM chart based on linear regression model
+============================================
+
+The following is an example of an application to a CUSUM chart based
 on a linear regression model.
 
 Assume we have $n$ past in-control  data $(Y_{-n},X_{-n}),\ldots,(Y_{-1},X_{-1})$,
 where $Y_i$ is a response variable and $X_i$ is a corresponding vector
 of covariates. The parameters $\beta$ of a linear model $\mbox{E}
-Y=X\beta$ is estimated  using the lm function. The corresponding risk
+Y=X\beta$ are estimated  using e.g. the lm function. The corresponding risk
 adjusted CUSUM chart to detect a shift of $\Delta>0$ in the mean of
 the response for new observations $(Y_{1},X_{1}),\ldots,(Y_{n},X_{n})$ is then defined by
 $$
@@ -33,7 +32,8 @@ Xlinreg <- data.frame(x1= rbinom(n,1,0.4), x2= runif(n,0,1), x3= rnorm(n))
 Xlinreg$y <- 2 + Xlinreg$x1 + Xlinreg$x2 + Xlinreg$x3 + rnorm(n)
 ```
 
-Next, we initialise and compute the resulting estimate for running the chart - in this case $\hat \beta$.
+Next, we initialise the chart and compute the estimate needed for
+running the chart - in this case $\hat \beta$. 
 ```{r}
 library(spcadjust)
 chartlinreg <- new("SPCCUSUM",model=SPCModellm(Delta=1,formula="y~x1+x2+x3"))
@@ -41,12 +41,14 @@ xihat <- xiofdata(chartlinreg,Xlinreg)
 xihat
 ```
 
-Calibrating the Chart to a Given Average Run Length (ARL)
+Calibrating the chart to a given average run length (ARL)
 ---------------------------------------------------
 
-Next find the threshold that with roughly 90\%
-probability  results in an average run length of at least 100 in control.
-You should increase the number of bootstrap replications (the argument nrep) for real applications.
+We now compute a threshold that with roughly 90%
+probability results in an average run length of at least 100 in
+control. In this regression model this is computed by non-parametric
+bootstrapping. The number of bootstrap replications (the argument
+nrep) shoud be increased for real applications. 
 
 ```{r}
 cal <- SPCproperty(data=Xlinreg,
@@ -62,7 +64,7 @@ set.seed(12381903)
 Run the chart
 ---------------------------------------------------
 
-Next, we run  the chart with new observations (that are in-control).
+Next, we run  the chart with new observations that are in-control.
 ```{r}
 n <- 100
 newXlinreg <- data.frame(x1= rbinom(n,1,0.4), x2= runif(n,0,1), x3=rnorm(n))
@@ -79,7 +81,7 @@ lines(c(0,100),rep(cal@raw,2),col="blue")
 legend("topleft",c("Adjusted Threshold","Unadjusted Threshold"),col=c("red","blue"),lty=1)
 ```
 
-In the next example, the  chart is run with data that is
+In the next example, the  chart is run with data that that are
 out-of-control from time 51 and onwards.
 ```{r}
 n <- 100

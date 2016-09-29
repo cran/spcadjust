@@ -2,20 +2,21 @@
 %\VignetteEngine{knitr::knitr}
 %\VignetteIndexEntry{Shewhart Chart with estimated In-Control State}
 -->
-Shewhart Chart with estimated In-Control State
+Shewhart chart with estimated in-control state
 ===========================================
-Using Normality Assumptions
+Using normality assumptions
 ---------------------------
 
-Here we consider a simple application to a two-sided Shewhart chart, assuming that
+Here we consider an application to a two-sided Shewhart chart, assuming that
 all observations are normally distributed.
 
 Based on $n$ past in-control  observations $X_{-n},\dots,X_{-1}$,
-the in-control mean is estimated by
+the in-control mean can be estimated by
 $\hat \mu = \frac{1}{n}\sum_{i=-n}^{-1} X_i$
 and the in-control variance by
 $\hat \sigma^2=\frac{1}{n-1}\sum_{i=-n}^{-1} (X_i-\hat \mu)^2$.
-Based on new observations $X_1,X_2,\dots$ a two-sided Shewhart chart is then defined by
+For new observations $X_1,X_2,\dots$, a two-sided Shewhart chart based on these
+estimated parameters is defined by
 $$
 S_t=\frac{X_t-\hat \mu}{\hat \sigma}.
 $$
@@ -34,18 +35,19 @@ par(mar=c(4,5,0,0))
 plot(-(250:1),X,xlab="t",ylab=expression(X[t]))
 ```
 
-Next, we initialise and compute the resulting estimate for running the chart - in this case $\hat \mu$ and $\hat \sigma$.
+Next, we initialise the chart and compute the estimates needed for
+running the chart - in this case $\hat \mu$ and $\hat \sigma$. 
 ```{r}
 library(spcadjust)
 chartShew <- new("SPCShew",model=SPCModelNormal(),twosided=TRUE);
 xihat <- xiofdata(chartShew,X)
 str(xihat)
 ```
-Calibrating the Chart to a Given Average Run Length (ARL)
+Calibrating the chart to a given average run length (ARL)
 ---------------------------------------------------
 
-We now compute a threshold that  with roughly 90\%
-probability  results in an average run length of at least 769 in control.
+We now compute a threshold that  with roughly 90%
+probability  results in an average run length of at least 370 in control.
 This is based on parametric resampling assuming normality
 of the observations.  You should
 increase the number of bootstrap replications (the argument nrep) for
@@ -54,7 +56,7 @@ real applications.
 ```{r}
 cal <- SPCproperty(data=X,nrep=100,
                    property="calARL", chart=chartShew,
-                   params=list(target=741),quiet=TRUE)
+                   params=list(target=370),quiet=TRUE)
 cal
 ```
 
@@ -65,13 +67,13 @@ Run the chart
 set.seed(12381951)
 ```
 
-Next, we run  the chart with new observations (that are in-control).
+Next, we run  the chart with new observations that are in-control.
 ```{r}
 newX <- rnorm(100)
 S <- runchart(chartShew, newdata=newX,xi=xihat)
 ```
 ```{r,fig=TRUE,fig.width=10,fig.height=4,echo=FALSE}
-par(mfrow=c(1,2),mar=c(4,5,0,0))
+par(mfrow=c(1,2),mar=c(4,5,0.1,0.1))
 plot(newX,xlab="t")
 plot(S,ylab=expression(S[t]),xlab="t",type="b",ylim=range(S,cal@res+2,cal@raw,-cal@res-1,-cal@raw))
 lines(c(0,100),rep(cal@res,2),col="red")
@@ -83,14 +85,15 @@ legend("topleft",c("Adjusted Threshold","Unadjusted Threshold"),col=c("red","blu
 
 
 
-In the next example, the  chart is run with data that is   out-of-control from time 51 onwards.
+In the next example, the  chart is run with data that are
+out-of-control from time 51 and onwards.
 ```{r}
 newX <- rnorm(100,mean=c(rep(0,50),rep(2,50)))
 S <- runchart(chartShew, newdata=newX,xi=xihat)
 ```
 
 ```{r,fig=TRUE,fig.width=10,fig.height=4,echo=FALSE}
-par(mfrow=c(1,2),mar=c(4,4,0,0))
+par(mfrow=c(1,2),mar=c(4,5,0.1,0.1))
 plot(newX,xlab="t")
 plot(S,ylab=expression(S[t]),xlab="t",type="b",ylim=range(S,cal@res+2,cal@raw,-cal@res-1,-cal@raw))
 lines(c(0,100),rep(cal@res,2),col="red")
